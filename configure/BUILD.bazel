@@ -1,0 +1,19 @@
+################################################################
+cc_binary(
+    name  = "xconfig",
+    linkstatic = 1,
+    srcs  = [
+        "main.c",
+        "spawner.c", "spawner.h",
+        "utarray.h",
+        # "uthash.h",
+        "utstring.h",
+    ],
+    copts = [
+        "-Iconfigure",
+        "-I$(GENDIR)/external/configure",
+
+        "-Igeneric-glibc"
+    ],
+    visibility = ["//visibility:public"],
+)

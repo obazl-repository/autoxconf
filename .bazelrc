@@ -1,0 +1,15 @@
+build --config=show
+common --color=yes
+common:show --subcommands=pretty_print
+common:show --verbose_failures
+
+build --toolchain_resolution_debug=.*
+#build --toolchain_resolution_debug=@bazel_tools//tools/cpp:toolchain_type
+
+common:maczig --extra_toolchains=@zig_sdk//toolchain:darwin_amd64
+
+
+### macos > linux using zig tc (requires custom tc profile)
+common:mac_linuxamd64 --extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.31
+common:mac_linuxamd64 --platforms=@zig_sdk//platform:linux_amd64
+

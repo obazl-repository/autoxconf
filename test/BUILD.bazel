@@ -1,0 +1,22 @@
+load("//configure:cc_xconfigure.bzl", "cc_xconfigure")
+
+# 1. write attrs to config.ini
+# 2. run spawner, which reads config.ini and runs feature tests
+# 3. output is config.h
+################################################################
+cc_xconfigure(
+    name  = "config",
+    out   = "config.h",
+    headers = [
+        "math.h", "unistd.h", "stdint.h"
+    ],
+    types = [
+        "off_t"
+    ],
+    functions = [
+        "getrusage",
+        "times",
+        "issetugid"
+    ],
+    visibility = ["//visibility:public"],
+)
