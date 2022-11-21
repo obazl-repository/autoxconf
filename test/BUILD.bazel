@@ -1,64 +1,6 @@
-load("//configure:BUILD_RULES.bzl",
-     "cc_xconfigure",
-     "config_header"
-     )
+load("//configure:BUILD_RULES.bzl", "config_cc_toolchain")
 
-# 1. write attrs to config.ini
-# 2. run spawner, which reads config.ini and runs feature tests
-# 3. output is config.h
-################################################################
-cc_xconfigure(
-    name  = "config",
-    out   = "config.h",
-    headers = [
-        "math.h", "unistd.h", "stdint.h"
-    ],
-    types = [
-        "off_t"
-    ],
-    functions = [
-        "getrusage",
-        "times",
-        "issetugid"
-    ],
-    visibility = ["//visibility:public"],
+config_cc_toolchain(
+    name = "config.cc",
+    out  = "config_cc.json"
 )
-
-config_header(
-    name = "hdr_sys_mman_h",
-    header = "sys/mman.h" ## AC_CHECK_HEADER
-)
-
-# config_function(
-#     name = "fn_mmap",
-#     headers = [":hdr_sys_mman_h"],
-#     function = "mmap" ## AC_CHECK_FUNC
-# )
-# config_function(
-#     name = "fn_munmap",
-#     function = "munmap" ## AC_CHECK_FUNC
-#     # headers = [":hdr_sys_mman_h"],
-#     deps    = [":fn_mmap"]
-# )
-
-# config_define(
-#     name = "has_mmap",
-#     deps = [
-#         ":hdr_sys_mman_h",
-#         ":fn_mmap",
-#         ":fn_munmap"
-#     ]
-# )
-
-
-#   [AC_CHECK_HEADER([locale.h],
-#     [AC_CHECK_FUNC([newlocale],
-#       [AC_CHECK_FUNC([freelocale],
-#         [AC_CHECK_FUNC([uselocale], [AC_DEFINE([HAS_LOCALE_H])])])])])])
-
-# def_config_item(
-#     name = "local",
-#     define = "HAS_LOCAL_H",
-#     header = "locale.h",     ## AC_CHECK_HEADER
-#     functions = ["newlocale", "freelocal", "uselocale"] ## AC_CHECK_FUNC
-# )
