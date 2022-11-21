@@ -1,0 +1,5 @@
+= makeheaders
+
+Home: link:https://www.hwaci.com/sw/mkhdr/[makeheaders]
+
+The license is embedded in the source file.

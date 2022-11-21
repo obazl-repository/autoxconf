@@ -1,0 +1,26 @@
+= uthash
+
+Derived from link:https://troydhanson.github.io/uthash/[uthash]
+
+The sources have been modified to work with makeheaders.
+
+* rename from .h to .c
+
+* comment out the inclusion guards e.g.
++
+/* #ifndef UTARRAY_H */
+/* #define UTARRAY_H */
+...
+/* #endif /\* UTARRAY_H *\/ */
++
+* add `#if INTERFACE ... #endif` around the public API
+* remove `static` from public functions
+* spit var definitions, e.g. in `utarray.h`
++
+const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};
++
+becomes in `utarray.c`:
++
+const UT_icd ut_int_icd;
+const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};
++

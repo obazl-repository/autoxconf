@@ -1,0 +1,90 @@
+load("//configure:cc_xconfigure.bzl", "cc_xconfigure")
+
+# 1. write attrs to config.ini
+# 2. run spawner, which reads config.ini and runs feature tests
+# 3. output is config.h
+################################################################
+cc_xconfigure(
+    name  = "config",
+    out   = "config.h",
+    headers = [
+        "math.h", "unistd.h", "stdint.h"
+    ],
+    types = [
+        "off_t"
+    ],
+    functions = [
+        "getrusage",
+        "times",
+        "issetugid"
+    ],
+    visibility = ["//visibility:public"],
+)
+
+## OCaml
+# AC_CHECK_HEADER([math.h])
+# AC_CHECK_HEADERS([unistd.h],[AC_DEFINE([HAS_UNISTD])])
+# AC_CHECK_HEADER([stdint.h],[AC_DEFINE([HAS_STDINT_H])])
+# AC_CHECK_HEADER([pthread_np.h],[AC_DEFINE([HAS_PTHREAD_NP_H])])
+# AC_CHECK_HEADER([dirent.h], [AC_DEFINE([HAS_DIRENT])], [],
+#   [#include <sys/types.h>])
+
+# AC_CHECK_HEADER([sys/select.h], [AC_DEFINE([HAS_SYS_SELECT_H])], [],
+#   [#include <sys/types.h>])
+
+# AC_CHECK_HEADER([stdatomic.h], [AC_DEFINE([HAS_STDATOMIC_H])])
+
+# AC_CHECK_HEADER([sys/mman.h], [AC_DEFINE([HAS_SYS_MMAN_H])])
+
+# AC_CHECK_HEADER([unistd.h],
+#   [AC_CHECK_DECL([getentropy],
+#                  [AC_DEFINE([HAS_GETENTROPY])], [],
+#                  [[#include <unistd.h>]])],
+#   [])
+
+# AS_CASE([$host],
+#   [*-*-mingw32|*-pc-windows],
+#     [AC_CHECK_HEADERS([afunix.h], [AC_DEFINE([HAS_AFUNIX_H])], [],
+
+# AS_CASE([$host],
+#   [*-*-mingw32|*-pc-windows], [AC_DEFINE([HAS_UTIME])],
+#   [AC_CHECK_HEADER([sys/types.h],
+#     [AC_CHECK_HEADER([utime.h],
+#       [AC_CHECK_FUNC([utime], [AC_DEFINE([HAS_UTIME])])])])])
+
+# AC_CHECK_HEADER([termios.h],
+#   [AC_CHECK_FUNC([tcgetattr],
+#     [AC_CHECK_FUNC([tcsetattr],
+#       [AC_CHECK_FUNC([tcsendbreak],
+#         [AC_CHECK_FUNC([tcflush],
+#           [AC_CHECK_FUNC([tcflow], [AC_DEFINE([HAS_TERMIOS])])])])])])])
+
+# AC_CHECK_HEADER([sys/utsname.h],
+#   [AC_CHECK_FUNC([uname], [AC_DEFINE([HAS_UNAME])])])
+
+# AS_CASE([$host],
+#   [*-pc-windows], [AC_DEFINE([HAS_LOCALE_H])],
+#   [AC_CHECK_HEADER([locale.h],
+#     [AC_CHECK_FUNC([newlocale],
+#       [AC_CHECK_FUNC([freelocale],
+#         [AC_CHECK_FUNC([uselocale], [AC_DEFINE([HAS_LOCALE_H])])])])])])
+
+# AC_CHECK_HEADER([xlocale.h],
+#   [AC_CHECK_FUNC([newlocale],
+#     [AC_CHECK_FUNC([freelocale],
+#       [AC_CHECK_FUNC([uselocale], [AC_DEFINE([HAS_XLOCALE_H])])])])])
+
+# AC_CHECK_HEADER([sys/mman.h],
+#   [AC_CHECK_FUNC([mmap],
+#     [AC_CHECK_FUNC([munmap], [AC_DEFINE([HAS_MMAP])])])])
+
+# AC_CHECK_HEADER([sys/shm.h],
+#   [
+#     AC_DEFINE([HAS_SYS_SHM_H])
+#     AC_CHECK_FUNC([shmat], [AC_DEFINE([HAS_SHMAT])])
+#   ])
+
+# AC_CHECK_HEADER([spawn.h],
+#   [AC_CHECK_FUNC([posix_spawn],
+#     [AC_CHECK_FUNC([posix_spawnp], [AC_DEFINE([HAS_POSIX_SPAWN])])])])
+

@@ -1,0 +1,8 @@
+cc_binary(
+    name  = "makeheaders",
+    srcs  = ["makeheaders.c"],
+    copts = ["-O3"],
+    linkstatic=1,
+    visibility = ["//visibility:public"]
+)
+

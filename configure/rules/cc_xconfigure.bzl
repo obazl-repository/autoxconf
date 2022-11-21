@@ -228,11 +228,20 @@ def _cc_xconfigure_impl(ctx):
     #     outputs = [output_file],
     # )
 
+    ################################################################
+    # [features]
+    # types = foo_t bar_t
+    # headers = foo.h bar.h baz.h
+    # functions = foo bar baz
+    xconfig_ini_data = "[features]\n"
+    ini_headers = " ".join(ctx.attr.headers)
+    xconfig_ini_data = xconfig_ini_data + "headers = " + ini_headers
+
     config_map_json = json.encode_indent(config_map)
-    xconfig_ini = ctx.actions.declare_file("xconfig.ini")
+    xconfig_ini_file = ctx.actions.declare_file("xconfig.ini")
     ctx.actions.write(
-        output = xconfig_ini,
-        content = config_map_json
+        output = xconfig_ini_file,
+        content = xconfig_ini_data
     )
 
     args = ctx.actions.args()
@@ -240,31 +249,61 @@ def _cc_xconfigure_impl(ctx):
     args.add("--xconf_compile_args")
     args.add_all(config_map["c_compile_cmd_line"])
     args.add_all(["--xconf_linker", config_map["LD"]])
-    args.add("--xconf_link_exe_args")
+    args.add("--xconf_args_link_exe")
     args.add_all(config_map["cpp_link_exe_cmd_line"])
     args.add("--xconf_link_dso_args")
     args.add_all(config_map["cpp_link_dso_cmd_line"])
     args.add("--xconf_link_static_args")
     args.add_all(config_map["cpp_link_static_cmd_line"])
 
+    args.add("--xconf_env_compile")
     for k,v in config_map["compile_env"].items():
-        args.add_all(["--xconf_env_compile_k", k])
-        args.add_all(["--xconf_env_compile_v", v])
+        args.add(k + "=" + v)
 
+        ## IF MACOS: DEVELOPER_DIR and SDKROOT required
+        # 'DEVELOPER_DIR=' is ok, but SDKROOT must point somewhere
+        args.add("DEVELOPER_DIR=")
+        # +
+        #          "/Applications/Xcode.app/Contents/Developer")
+                 # "Platforms/MacOSX.platform/Developer")
+# $DEVELOPER_DIR")
+                 ## + apple_common.apple_toolchain().developer_dir())
+
+        ##TODO: get SDKROOT from the env, or from Bazel (which ought to know it?)
+        args.add("SDKROOT=" +
+                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+
+    args.add("--xconf_env_link_exe")
     for k,v in config_map["link_exe_env"].items():
-        args.add_all(["--xconf_env_link_exe_k", k])
-        args.add_all(["--xconf_env_link_exe_v", v])
+        args.add(k + "=" + v)
 
+    args.add("--xconf_env_link_dso")
     for k,v in config_map["link_dso_env"].items():
-        args.add_all(["--xconf_env_link_dso_k", k])
-        args.add_all(["--xconf_env_link_dso_v", v])
+        args.add(k + "=" + v)
+
+    print("developer_dir: %s" % apple_common.apple_toolchain().developer_dir())
+    print("sdk dir: %s" % apple_common.apple_toolchain().sdk_dir())
+
+    xcode_version_config = apple_common.XcodeVersionConfig
+    print("xcode_version_config: %s" % xcode_version_config)
+
+    # print("apple env: %s" % apple_common.apple_host_system_env(xcode_version_config))
+
+    # print("ToolchainInfo: %s" % platform_common.ToolchainInfo().developer_dir)
+
+    args.add("--xconf_out")
+    args.add(ctx.outputs.out.path)
+
+    args.add("--xconf_ini")
+    args.add(xconfig_ini_file.path)
 
     ctx.actions.run(
+        mnemonic = "CONFIGURATOR",
         executable = ctx.file._tool,
         arguments = [args],
         # env = env,
         inputs = depset(
-            [ctx.file._tool],
+            [ctx.file._tool, xconfig_ini_file],
             transitive = [tc.all_files, merged_contexts.headers]
         ),
         outputs = [ctx.outputs.out],
@@ -272,7 +311,10 @@ def _cc_xconfigure_impl(ctx):
 
     ########
     return [
-        DefaultInfo(files = depset([ctx.outputs.out]))
+        DefaultInfo(files = depset([
+            ctx.outputs.out,
+            xconfig_ini_file
+        ]))
     ]
 
 ####################
@@ -285,6 +327,9 @@ cc_xconfigure = rule(
             executable = True,
             cfg = "exec"
         ),
+        # "_ini": attr.output(
+        #     default = "xconfig.ini"
+        # ),
         "out": attr.output(mandatory=True),
         "headers": attr.string_list(),
         "types": attr.string_list(),

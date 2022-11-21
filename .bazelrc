@@ -3,9 +3,31 @@ common --color=yes
 common:show --subcommands=pretty_print
 common:show --verbose_failures
 
-build --toolchain_resolution_debug=.*
+# build --ui_event_filters=stderr,stdout,error,warning,info,progress,start,finish
+## error, warning, info, progress, debug, start, finish, subcommand, stdout, stderr, pass, fail, timeout, cancelled or depchecker.
+
+# build --toolchain_resolution_debug=.*
 #build --toolchain_resolution_debug=@bazel_tools//tools/cpp:toolchain_type
 
+# xcodebuild -version
+# build --xcode_version=14.1
+# build --xcode_version_config=@bazel_tools//...
+
+# xcodebuild -showsdks
+# build --macos_sdk_version=13.0
+
+# Minimum compatible macOS version for (build) host targets.
+# If unspecified, uses 'macos_sdk_version'.
+# NB: os version v. sdk version?
+# build --host_macos_minimum_os=
+
+# Minimum compatible macOS version for targets.
+# If unspecified, uses 'macos_sdk_version'.
+# build --macos_minimum_os=
+
+# build --macos_cpus=
+
+################################################################
 common:maczig --extra_toolchains=@zig_sdk//toolchain:darwin_amd64
 
 

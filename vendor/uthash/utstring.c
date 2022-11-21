@@ -23,10 +23,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* a dynamic string implementation using macros
  */
-#ifndef UTSTRING_H
-#define UTSTRING_H
+/* #ifndef UTSTRING_H */
+/* #define UTSTRING_H */
 
 #define UTSTRING_VERSION 2.3.0
+
+#include "utstring.h"
+
+#if INTERFACE
 
 #include <stdlib.h>
 #include <string.h>
@@ -130,6 +134,8 @@ do {                                                             \
 
 #define utstring_body(s) ((s)->d)
 
+#endif  // INTERFACE
+
 UTSTRING_UNUSED static void utstring_printf_va(UT_string *s, const char *fmt, va_list ap) {
    int n;
    va_list cp;
@@ -154,10 +160,11 @@ UTSTRING_UNUSED static void utstring_printf_va(UT_string *s, const char *fmt, va
 }
 #ifdef __GNUC__
 /* support printf format checking (2=the format string, 3=start of varargs) */
-static void utstring_printf(UT_string *s, const char *fmt, ...)
+//static
+void utstring_printf(UT_string *s, const char *fmt, ...)
   __attribute__ (( format( printf, 2, 3) ));
 #endif
-UTSTRING_UNUSED static void utstring_printf(UT_string *s, const char *fmt, ...) {
+UTSTRING_UNUSED /* static */ void utstring_printf(UT_string *s, const char *fmt, ...) {
    va_list ap;
    va_start(ap,fmt);
    utstring_printf_va(s,fmt,ap);
@@ -404,4 +411,4 @@ UTSTRING_UNUSED static long utstring_findR(
  * end substring search functions                                              *
  ******************************************************************************/
 
-#endif /* UTSTRING_H */
+/* #endif /\* UTSTRING_H *\/ */

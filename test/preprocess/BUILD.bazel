@@ -1,32 +1,16 @@
 load("//configure:BUILD_RULES.bzl",
      "cc_xconfigure",
-     "config_header"
+     "config_headers"
      )
 
-# 1. write attrs to config.ini
-# 2. run spawner, which reads config.ini and runs feature tests
-# 3. output is config.h
-################################################################
-cc_xconfigure(
-    name  = "config",
-    out   = "config.h",
-    headers = [
-        "math.h", "unistd.h", "stdint.h"
-    ],
-    types = [
-        "off_t"
-    ],
-    functions = [
-        "getrusage",
-        "times",
-        "issetugid"
-    ],
-    visibility = ["//visibility:public"],
-)
-
-config_header(
-    name = "hdr_sys_mman_h",
-    header = "sys/mman.h" ## AC_CHECK_HEADER
+##############
+config_headers(
+    name = "sys_mman",
+    headers = {
+        # "hdr.h" : [depends on ...]
+        "sys/mman.h" : ["a.h", "b.h"],
+        "foo.h": []
+    }
 )
 
 # config_function(

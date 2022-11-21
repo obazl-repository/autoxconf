@@ -1,0 +1,57 @@
+################################################################
+cc_binary(
+    name  = "xconfig",
+    linkstatic = 1,
+    srcs  = [
+        "main.c", "main.h",
+        "feature_tester.c", "feature_tester.h",
+        "preprocess.c", "preprocess.h",
+        "spawner.c", "spawner.h",
+        "auto_conf_ini.c", "auto_conf_ini.h",
+        "//vendor/inih:ini.c", "//vendor/inih:ini.h",
+        "//vendor/uthash:utarray.c", "utarray.h",
+        "//vendor/uthash:utstring.c", "utstring.h"
+    ],
+    copts = [
+        # "-Iconfigure",
+        "-I$(GENDIR)/configure/src",
+        "-I$(GENDIR)/external/configure",
+
+        "-Ivendor/inih",
+        "-I$(GENDIR)/vendor/uthash"
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "mkhdrs",
+    srcs = [
+        "main.c",
+        "feature_tester.c",
+        "preprocess.c",
+        "spawner.c",
+        "auto_conf_ini.c",
+        "//vendor/inih:ini.h",
+        "//vendor/uthash:utarray.c",
+        "//vendor/uthash:utstring.c",
+    ],
+    outs = [
+        "main.h",
+        "feature_tester.h",
+        "preprocess.h",
+        "spawner.h",
+        "auto_conf_ini.h",
+        "utarray.h",
+        "utstring.h",
+    ],
+    cmd = " ".join([
+        "SRC1=$(location main.c);",
+        "SRCDIR1=`dirname $$SRC1`;",
+        "$(location //vendor/makeheaders)",
+        "$(SRCS);",
+        "cp $${SRCDIR1}/*.h $(@D);",
+        "cp vendor/uthash/*.h $(@D)/;",
+    ]),
+    tools = ["//vendor/makeheaders"],
+    visibility = ["//visibility:public"]
+)

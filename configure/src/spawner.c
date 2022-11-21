@@ -21,19 +21,12 @@
 #include <sys/stat.h>
 
 /* #include "ini.h" */
-#include "utarray.h"
-#include "utstring.h"
+/* #include "utarray.h" */
+/* #include "utstring.h" */
 
 #include "spawner.h"
 
-int strsort(const void *_a, const void *_b)
-{
-    const char *a = *(const char* const *)_a;
-    const char *b = *(const char* const *)_b;
-    return strcmp(a,b);
-}
-
-char * run_cmd(char *executable, char **argv)
+int run_cmd(char *executable, char **argv, char **envp)
 {
 /* #if defined(DEBUG_TRACE) */
     char **ptr = argv;
@@ -43,7 +36,16 @@ char * run_cmd(char *executable, char **argv)
         utstring_printf(tmp, "%s ", *ptr);
         ptr++;
     }
-    printf("run cmd: %s", utstring_body(tmp));
+    printf("run cmd: %s\n", utstring_body(tmp));
+
+    ptr = envp;
+    utstring_renew(tmp);
+    while (*ptr) {
+        utstring_printf(tmp, "%s ", *ptr);
+        ptr++;
+    }
+    printf("run env: %s\n", utstring_body(tmp));
+
     utstring_free(tmp);
 /* #endif */
 
@@ -54,7 +56,7 @@ char * run_cmd(char *executable, char **argv)
     /*     NULL}; */
     int rc;
 
-    extern char **environ;
+    /* extern char **environ; */
 
     /* FIXME: write stderr to log instead of dev/null? */
     /* int DEVNULL_FILENO = open("/dev/null", O_WRONLY); */
@@ -117,7 +119,7 @@ char * run_cmd(char *executable, char **argv)
     fprintf(stdout, "SPAWN EXE realpath: %s\n", rp);
 
     fprintf(stdout, "spawning %s\n", rp);
-    rc = posix_spawnp(&pid, rp, &action, NULL, argv, environ);
+    rc = posix_spawnp(&pid, rp, &action, NULL, argv, envp);
 
     if (rc != 0) {
         /* does not set errno */
@@ -156,7 +158,7 @@ char * run_cmd(char *executable, char **argv)
 
     int bytes_read = read(cerr_pipe[0], &buffer[0], 1024);
     if (bytes_read > 0) {
-        fprintf(stdout, "Read message: %s", buffer);
+        fprintf(stdout, "Readed stderr message: %s", buffer);
     }
 
     bytes_read = read(cout_pipe[0], &buffer[0], 1024);
@@ -167,16 +169,67 @@ char * run_cmd(char *executable, char **argv)
             buffer[bytes_read - 1] = '\0';
     }
 
-    waitpid(pid, &rc, 0);
-    if (rc) {
-        fprintf(stderr, "run_command rc: %d\n", rc);
+    pid_t waitrc = waitpid(pid, &rc, 0);
+    if (waitrc == -1) {
+        perror("spawn_cmd waitpid error");
+        /* log_error("spawn_cmd"); */
         posix_spawn_file_actions_destroy(&action);
-        exit(EXIT_FAILURE);
+        return -1;
+    } else {
+#if defined(DEBUG_TRACE)
+        /* log_trace("waitpid rc: %d", waitrc); */
+#endif
+        /* if (waitrc == 0) { */
+        // child exit OK
+        if ( WIFEXITED(rc) ) {
+            // terminated normally by a call to _exit(2) or exit(3).
+            fprintf(stdout, "WIFEXITED\n");
+            fprintf(stdout, "WEXITSTATUS: %d\n", WEXITSTATUS(rc));
+#if defined(DEBUG_TRACE)
+            /* log_trace("WIFEXITED(rc)"); */
+            /* log_trace("WEXITSTATUS(rc): %d", WEXITSTATUS(rc)); */
+#endif
+            /* log_debug("WEXITSTATUS: %d", WEXITSTATUS(rc)); */
+            /* "widow" the pipe (delivers EOF to reader)  */
+            /* close(stdout_pipe[1]); */
+            /* dump_pipe(STDOUT_FILENO, stdout_pipe[0]); */
+            /* close(stdout_pipe[0]); */
+
+            /* "widow" the pipe (delivers EOF to reader)  */
+            /* close(stderr_pipe[1]); */
+            /* dump_pipe(STDERR_FILENO, stderr_pipe[0]); */
+            /* if opam repos need update... */
+            /* close(stderr_pipe[0]); */
+            posix_spawn_file_actions_destroy(&action);
+            return -1;
+        }
+        else if (WIFSIGNALED(rc)) {
+            // terminated due to receipt of a signal
+            fprintf(stdout, "WIFSIGNALED\n");
+            fprintf(stdout, "WTERMSIG: %d\n",
+                    WTERMSIG(rc));
+            /* log_error("WIFSIGNALED(rc)"); */
+            /* log_error("WTERMSIG: %d", WTERMSIG(rc)); */
+
+            // a failed compile is ok, means "unsupported feature"
+            // but we need to catch other possible errors
+            posix_spawn_file_actions_destroy(&action);
+            return 0;
+        } else if (WIFSTOPPED(rc)) {
+            /* process has not terminated, but has stopped and can
+               be restarted. This macro can be true only if the
+               wait call specified the WUNTRACED option or if the
+               child process is being traced (see ptrace(2)). */
+            /* log_error("WIFSTOPPED(rc)"); */
+            /* log_error("WSTOPSIG: %d", WSTOPSIG(rc)); */
+            posix_spawn_file_actions_destroy(&action);
+            return -1;
+        }
     }
 
-    /* fprintf(stdout,  "exit code: %d\n", rc); */
-   posix_spawn_file_actions_destroy(&action);
-    return buffer;
+    fprintf(stdout,  "run_command rc: %d\n", rc);
+    posix_spawn_file_actions_destroy(&action);
+    return rc;
 }
 
 /* char principal[256]; */
@@ -206,24 +259,3 @@ char * run_cmd(char *executable, char **argv)
 /*     return 0; */
 /* } */
 
-void config(int argc, char *_argv[])
-{
-    fprintf(stdout, "CONFIG\n");
-    char *exe = NULL, *result = NULL;
-    /* exe = argv[1]; */
-    printf("config exe: %s\n", exe);
-    exe = "gcc";
-    char *argv[] = {"gcc", "--version", NULL};
-
-    result = run_cmd(exe, argv);
-    if (result == NULL) {
-        fprintf(stderr, "FAIL: run_cmd 'opam var ocaml:version'\n");
-    } else {
-        /* utstring_printf(opam_switch_id, "%s", result); */
-/* #if defined(DEBUG_TRACE) */
-        fprintf(stdout, "cmd result: '%s'\n", result);
-            /* utstring_body(opam_switch_id)); */
-/* #endif */
-    }
-
-}

@@ -23,10 +23,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /* a dynamic array implementation using macros
  */
-#ifndef UTARRAY_H
-#define UTARRAY_H
+/* #ifndef UTARRAY_H */
+/* #define UTARRAY_H */
 
 #define UTARRAY_VERSION 2.3.0
+
+#include "utarray.h"
+
+#if INTERFACE
 
 #include <stddef.h>  /* size_t */
 #include <string.h>  /* memset, etc */
@@ -230,19 +234,26 @@ typedef struct {
 #define utarray_back(a) (((a)->i) ? (_utarray_eltptr(a,(a)->i-1)) : NULL)
 #define utarray_eltidx(a,e) (((char*)(e) - (a)->d) / (a)->icd.sz)
 
+#endif
+
 /* last we pre-define a few icd for common utarrays of ints and strings */
-static void utarray_str_cpy(void *dst, const void *src) {
+void utarray_str_cpy(void *dst, const void *src) {
   char *const *srcc = (char *const *)src;
   char **dstc = (char**)dst;
   *dstc = (*srcc == NULL) ? NULL : strdup(*srcc);
 }
-static void utarray_str_dtor(void *elt) {
+void utarray_str_dtor(void *elt) {
   char **eltc = (char**)elt;
   if (*eltc != NULL) free(*eltc);
 }
-static const UT_icd ut_str_icd UTARRAY_UNUSED = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
-static const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};
-static const UT_icd ut_ptr_icd UTARRAY_UNUSED = {sizeof(void*),NULL,NULL,NULL};
 
+const UT_icd ut_str_icd;
+const UT_icd ut_str_icd UTARRAY_UNUSED = {sizeof(char*),NULL,utarray_str_cpy,utarray_str_dtor};
 
-#endif /* UTARRAY_H */
+const UT_icd ut_int_icd;
+const UT_icd ut_int_icd UTARRAY_UNUSED = {sizeof(int),NULL,NULL,NULL};
+
+const UT_icd ut_ptr_icd;
+const UT_icd ut_ptr_icd UTARRAY_UNUSED = {sizeof(void*),NULL,NULL,NULL};
+
+/* #endif /\* UTARRAY_H *\/ */
