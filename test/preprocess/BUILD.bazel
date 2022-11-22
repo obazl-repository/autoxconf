@@ -4,12 +4,22 @@ load("//configure:BUILD_RULES.bzl",
      )
 
 ##############
+# config_defines(
+#     name = "defns",
+#     defines = {
+#         "HAVE_UNISTD_H": "HAS_UNISTD"
+#     },
+#     header_defs = [":sys_mman"]
+# )
+
 config_headers(
     name = "sys_mman",
     headers = {
         # "hdr.h" : [depends on ...]
-        "sys/mman.h" : ["a.h", "b.h"],
-        "foo.h": []
+        "sys/mman.h" : ["stdio.h", "unistd.h"],
+        "foo.h": [],
+        "unistd.h": [], # HAS_UNISTD v. HAVE_UNISTD_H
+        "bar.h": [],
     }
 )
 

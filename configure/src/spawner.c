@@ -26,27 +26,32 @@
 
 #include "spawner.h"
 
-int run_cmd(char *executable, char **argv, char **envp)
+int run_cmd(char *executable, char **argv, char **env)
 {
+    printf("run_cmd\n");
 /* #if defined(DEBUG_TRACE) */
-    char **ptr = argv;
+
+    char **argvp = argv;
     UT_string *tmp;
     utstring_new(tmp);
-    while (*ptr) {
-        utstring_printf(tmp, "%s ", *ptr);
-        ptr++;
+    while (*argvp) {
+        /* utstring_printf(tmp, "%s ", *argvp); */
+        fprintf(stdout, "Argv: %s\n", *argvp);
+        argvp++;
     }
     printf("run cmd: %s\n", utstring_body(tmp));
 
-    ptr = envp;
+    char **envp = env;
     utstring_renew(tmp);
-    while (*ptr) {
-        utstring_printf(tmp, "%s ", *ptr);
-        ptr++;
+    while (*envp) {
+        printf("Env: %s\n", *envp);
+        utstring_printf(tmp, "%s ", *envp);
+        *envp++;
     }
     printf("run env: %s\n", utstring_body(tmp));
 
     utstring_free(tmp);
+
 /* #endif */
 
     pid_t pid;
@@ -111,6 +116,7 @@ int run_cmd(char *executable, char **argv, char **envp)
     rc = access(executable, R_OK);
     if (rc == 0) {
         fprintf(stdout, "SPAWN EXE FOUND: %s\n", executable);
+        fprintf(stdout, "arg[0]: %s\n", argv);
     } else {
         fprintf(stdout, "SPAWN EXE NOT FOUND\n");
     }
@@ -119,7 +125,7 @@ int run_cmd(char *executable, char **argv, char **envp)
     fprintf(stdout, "SPAWN EXE realpath: %s\n", rp);
 
     fprintf(stdout, "spawning %s\n", rp);
-    rc = posix_spawnp(&pid, rp, &action, NULL, argv, envp);
+    rc = posix_spawnp(&pid, rp, &action, NULL, argv, env);
 
     if (rc != 0) {
         /* does not set errno */
@@ -171,7 +177,7 @@ int run_cmd(char *executable, char **argv, char **envp)
 
     pid_t waitrc = waitpid(pid, &rc, 0);
     if (waitrc == -1) {
-        perror("spawn_cmd waitpid error");
+        fprintf(stdout, "spawn_cmd waitpid error");
         /* log_error("spawn_cmd"); */
         posix_spawn_file_actions_destroy(&action);
         return -1;
@@ -201,7 +207,7 @@ int run_cmd(char *executable, char **argv, char **envp)
             /* if opam repos need update... */
             /* close(stderr_pipe[0]); */
             posix_spawn_file_actions_destroy(&action);
-            return -1;
+            return 0;
         }
         else if (WIFSIGNALED(rc)) {
             // terminated due to receipt of a signal
@@ -214,7 +220,7 @@ int run_cmd(char *executable, char **argv, char **envp)
             // a failed compile is ok, means "unsupported feature"
             // but we need to catch other possible errors
             posix_spawn_file_actions_destroy(&action);
-            return 0;
+            return rc;
         } else if (WIFSTOPPED(rc)) {
             /* process has not terminated, but has stopped and can
                be restarted. This macro can be true only if the
@@ -223,7 +229,7 @@ int run_cmd(char *executable, char **argv, char **envp)
             /* log_error("WIFSTOPPED(rc)"); */
             /* log_error("WSTOPSIG: %d", WSTOPSIG(rc)); */
             posix_spawn_file_actions_destroy(&action);
-            return -1;
+            return rc;
         }
     }
 

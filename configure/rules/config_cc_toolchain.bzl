@@ -11,9 +11,16 @@ DISABLED_FEATURES = [
 
 def _config_cc_toolchain_impl(ctx):
 
+    config_map = {}
+
+    config_map["target_host_platform"] = str(ctx.fragments.platform.host_platform)
+    config_map["target_platform"] = str(ctx.fragments.platform.platform)
+
+    config_map["host_host_platform"] = str(ctx.host_fragments.platform.host_platform)
+    config_map["host_platform"] = str(ctx.host_qfragments.platform.platform)
+
     tc = find_cpp_toolchain(ctx)
 
-    config_map = {}
     config_map["AR"] = ctx.var["AR"]
     config_map["ABI"] = ctx.var["ABI"]
     config_map["ABI_GLIBC_VERSION"] = ctx.var["ABI_GLIBC_VERSION"]
@@ -22,7 +29,8 @@ def _config_cc_toolchain_impl(ctx):
     config_map["C_COMPILER"] = ctx.var["C_COMPILER"]
     config_map["LD"] = ctx.var["LD"]
     config_map["NM"] = ctx.var["NM"]
-    config_map["OBJCOPY"] = ctx.var["OBJCOPY"]
+    if ctx.var.get("OBJCOPY"):
+        config_map["OBJCOPY"] = ctx.var["OBJCOPY"]
     config_map["STRIP"] = ctx.var["STRIP"]
     config_map["TARGET_CPU"] = ctx.var["TARGET_CPU"]
 
@@ -246,5 +254,5 @@ config_cc_toolchain = rule(
         ),
     },
     toolchains = use_cpp_toolchain(),
-    fragments = ["cpp", "platform"],
+    fragments = ["apple", "cpp", "platform"],
 )

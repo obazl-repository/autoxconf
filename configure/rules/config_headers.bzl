@@ -153,19 +153,6 @@ def _config_headers_impl(ctx):
     args.add("--xconf_action_preprocess")
     args.add_all(["--xconf_compiler", config_map["compiler_path"]])
 
-    ################################################################
-    # from bazel we can get a preprocess_assemble command line but not
-    # a pure preprocess cmd line (e.g. with '-E').
-
-    # All "known" C compilers take -E to run the preprocessor with
-    # output to stdout, but they differ in how they control emission
-    # of line numbers.
-
-    config_map_json = json.encode_indent(config_map)
-    print("config_map: %s" % config_map_json)
-    fail()
-    args.add_all(["--xconf_args_preprocess", "-E"])
-
     # "compiler_path": "external/local_config_cc/wrapped_clang",
 
     if config_map["compiler"] in ["clang"]: # zig on mac
@@ -231,29 +218,37 @@ def _config_headers_impl(ctx):
 
     args.add("--xconf_args_compile")
     args.add_all(config_map["compile_args"])
+    ################################################################
+    # from bazel we can get a preprocess_assemble command line but not
+    # a pure preprocess cmd line (e.g. with '-E').
+
+    # All "known" C compilers take -E to run the preprocessor with
+    # output to stdout, but they differ in how they control emission
+    # of line numbers.
+    args.add("-E")
+
+    config_map_json = json.encode_indent(config_map)
+    # print("config_map: %s" % config_map_json)
 
     args.add("--xconf_env_compile")
     for k,v in config_map["compile_env"].items():
+        # print("ADDING ENV: {k} = {v}".format(
+        #     k = k, v = v))
         args.add(k + "=" + v)
-
-        ## IF MACOS: DEVELOPER_DIR and SDKROOT required
-        # 'DEVELOPER_DIR=' is ok, but SDKROOT must point somewhere
-        args.add("DEVELOPER_DIR=")
-        # +
-        #          "/Applications/Xcode.app/Contents/Developer")
+    ## IF MACOS: DEVELOPER_DIR and SDKROOT required
+    # 'DEVELOPER_DIR=' is ok, but SDKROOT must point somewhere
+    # ???
+    args.add("DEVELOPER_DIR=" + "/Applications/Xcode.app/Contents/Developer")
                  # "Platforms/MacOSX.platform/Developer")
 # $DEVELOPER_DIR")
                  ## + apple_common.apple_toolchain().developer_dir())
 
         ##TODO: get SDKROOT from the env, or from Bazel (which ought to know it?)
-        args.add("SDKROOT=" +
-                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+    args.add("SDKROOT=" +
+             "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
 
     print("apple.tc developer_dir: %s" % apple_common.apple_toolchain().developer_dir())
     print("apple.tc sdk dir: %s" % apple_common.apple_toolchain().sdk_dir())
-
-    # args.add("--xconf_out")
-    # args.add(ctx.outputs.out.path)
 
     # args.add("--xconf_ini")
     # args.add(xconfig_ini_file.path)
@@ -262,9 +257,17 @@ def _config_headers_impl(ctx):
 
     for hdr,deps in ctx.attr.headers.items():
         args.add("--xconf_hdr")
-        args.add(hdr + ">" + ",".join(deps))
+        if len(deps) > 0:
+            args.add(hdr + ">" + ",".join(deps))
+        else:
+            args.add(hdr)
 
-    outfile = ctx.actions.declare_file("outpp.i")
+    args.add("--xconf_src")
+    args.add(ctx.file._null_src)
+
+    outfile = ctx.actions.declare_file(ctx.label.name + ".json")
+    args.add("--xconf_out")
+    args.add(outfile.path)
 
     ctx.actions.run(
         mnemonic = "Preprocess",
@@ -272,7 +275,7 @@ def _config_headers_impl(ctx):
         arguments = [args],
         # env = env,
         inputs = depset(
-            [ctx.file._tool],
+            [ctx.file._tool, ctx.file._null_src],
             transitive = [tc.all_files, merged_contexts.headers]
         ),
         outputs = [outfile] # [ctx.outputs.out],
@@ -292,6 +295,10 @@ config_headers = rule(
             allow_single_file = True,
             executable = True,
             cfg = "exec"
+        ),
+        "_null_src": attr.label(
+            allow_single_file = True,
+            default = "//configure/src:null.c"
         ),
         "headers": attr.string_list_dict(),
         "_cc_toolchain": attr.label(
