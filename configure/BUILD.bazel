@@ -1,1 +1,6 @@
-# do not remove
+load("//configure:BUILD_RULES.bzl", "config_cc_toolchain")
+
+config_cc_toolchain(
+    name = "configure",
+    out  = "config_cc.json"
+)

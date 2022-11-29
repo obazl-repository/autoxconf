@@ -17,7 +17,7 @@ def _config_cc_toolchain_impl(ctx):
     config_map["target_platform"] = str(ctx.fragments.platform.platform)
 
     config_map["host_host_platform"] = str(ctx.host_fragments.platform.host_platform)
-    config_map["host_platform"] = str(ctx.host_qfragments.platform.platform)
+    config_map["host_platform"] = str(ctx.host_fragments.platform.platform)
 
     tc = find_cpp_toolchain(ctx)
 
